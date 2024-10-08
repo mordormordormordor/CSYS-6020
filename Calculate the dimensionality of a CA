@@ -1,0 +1,79 @@
+import numpy as np
+import matplotlib.pyplot as plt
+
+def box_counting(cellular_automaton):
+    # Convert the input array to a binary matrix
+    binary_matrix = np.array(cellular_automaton, dtype=int)
+    
+    # Get the size of the matrix
+    n = min(binary_matrix.shape)
+    
+    # List to hold box sizes and corresponding box counts
+    box_sizes = []
+    counts = []
+
+    # Loop over different box sizes
+    box_size = 1
+    while box_size <= n:
+        box_sizes.append(box_size)
+        
+        # Calculate the number of boxes needed
+        num_boxes = 0
+        for i in range(0, binary_matrix.shape[0], box_size):
+            for j in range(0, binary_matrix.shape[1], box_size):
+                # Extract the box
+                sub_box = binary_matrix[i:i + box_size, j:j + box_size]
+                
+                # Check if the box contains any "1"
+                if np.any(sub_box):
+                    num_boxes += 1
+        
+        counts.append(num_boxes)
+        box_size *= 2
+    print(box_sizes)
+    print(counts)
+    return box_sizes, counts
+
+# Plot log-log scaling
+def plot_box_counting_loglog(box_sizes, counts):
+    log_box_sizes = np.log(1 / np.array(box_sizes))
+    log_counts = np.log(np.array(counts))
+    
+    # Fit a line to the log-log data
+    coeffs = np.polyfit(log_box_sizes, log_counts, 1)
+    fractal_dimension = coeffs[0]
+    
+    plt.plot(log_box_sizes, log_counts, 'o', label='Data')
+    plt.plot(log_box_sizes, np.polyval(coeffs, log_box_sizes), label=f'Fit: D = {fractal_dimension:.4f}')
+    plt.xlabel('log(1/box size)')
+    plt.ylabel('log(box count)')
+    plt.title(f'Fractal Dimension: {fractal_dimension:.4f}')
+    plt.legend()
+    plt.grid(True)
+    plt.show()
+
+# Plot regular box size vs box count
+def plot_box_counting_regular(box_sizes, counts):
+    plt.plot(box_sizes, counts, 'o-', label='Box Count')
+    plt.xlabel('Box Size')
+    plt.ylabel('Box Count')
+    plt.title('Box Counting: Box Size vs Box Count')
+    plt.grid(True)
+    plt.legend()
+    plt.show()
+
+
+# Example usage
+cellular_automaton = [
+    [0, 1, 1, 0, 1],
+    [1, 1, 0, 0, 0],
+    [0, 0, 1, 1, 0],
+    [1, 0, 0, 1, 1],
+    [0, 1, 1, 0, 0]
+]
+
+box_sizes, counts = box_counting(cellular_automaton)
+
+# Plot both graphs
+plot_box_counting_loglog(box_sizes, counts)  # Log-log graph
+plot_box_counting_regular(box_sizes, counts)  # Regular graph
