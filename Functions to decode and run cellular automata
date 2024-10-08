@@ -1,0 +1,81 @@
+import numpy as np
+
+# Ruleset for binary 1D CA
+# current pattern:	111	110	101	100	011	010	001	000
+# new state:      	 ?   ?	 ?	 ?	 ?	 ?	 ?	 ?
+def run_1d_CA(steps, tape):
+    rule = np.zeros((2, 2, 2))
+    rule[1,1,1] = 1
+    rule[1,1,0] = 0
+    rule[1,0,1] = 1
+    rule[0,1,1] = 1
+    rule[1,0,0] = 1
+    rule[0,1,0] = 0
+    rule[0,0,1] = 0
+    rule[0,0,0] = 0
+    N = tape.shape[0] #size (length) of the system
+    #2D data structure to record all time steps: t-th row = system at time t
+    tapes = np.zeros((steps, N),dtype=int)
+    tapes[0, :] = tape #initial conditions
+    for i in range(steps-1): #for every time step
+        for j in range(N): #for every cell
+            #check state of cell j and neighborhood
+            left = tapes[i, (j-1)%N]
+            center = tapes[i, j%N]
+            right = tapes[i, (j+1)%N]
+            #apply the rule on cell j
+            tapes[(i+1), j] = rule[left,center,right]
+    return tapes
+
+# Example of a hardcoded ruleset for Rule 30
+# current pattern:	111	110	101	100	011	010	001	000
+# new state:      	 0   0	 0	 1	 1	 1	 1	 0
+def run_rule_30(steps, tape):
+    rule = np.zeros((2, 2, 2))
+    rule[1,1,1] = 0
+    rule[1,1,0] = 0
+    rule[1,0,1] = 0
+    rule[1,0,0] = 1
+    rule[0,1,1] = 1
+    rule[0,1,0] = 1
+    rule[0,0,1] = 1
+    rule[0,0,0] = 0
+    N = tape.shape[0]
+    tapes = np.zeros((steps, N),dtype=int) #data structure to record all time steps
+    tapes[0, :] = tape #initial conditions
+    for i in range(steps-1): #for every time step
+        for j in range(N): #for every cell
+            #check state of cell j and neighborhood
+            left = tapes[i, (j-1)%N]
+            center = tapes[i, j%N]
+            right = tapes[i, (j+1)%N]
+            #apply the rule on cell j
+            tapes[(i+1), j] = rule[left,center,right]
+    return tapes
+
+# Functions to decode a cellular automaton rule from an integer
+# using the Wolfram convention and binary representation
+# https://mathworld.wolfram.com/ElementaryCellularAutomaton.html
+def decode_rule(code, S, K):
+    rule = np.zeros(S**K, dtype=int) #all rules of S states & K cells
+    i = S**K-1 #start at the end, indexed by zero
+    while code > 0: #https://en.wikipedia.org/wiki/Wolfram_code
+        rule[i] = code % S
+        code = code // S
+        i -= 1
+    return rule[::-1] #reverse the ruleset
+
+# Function to run a cellular automaton rule given an initial
+# N-sized tape. Returns a 'steps' x 'N' matrix
+def run_cellauto(S, K, rule, steps, tape):
+    N = tape.shape[0]
+    tapes = np.zeros((steps, N)) #data structure to record all time steps
+    tapes[0, :] = tape #initial conditions
+    for i in range(steps-1): #for every time step
+        for j in range(N): #for every cell
+            #calcule the rule index (https://en.wikipedia.org/wiki/Wolfram_code)
+            #modulo (%) applies periodic boundary condition
+            idx = int(sum([S**(K-(k+K//2)-1)*tapes[i, (j+k)%N] for k in range(-(K//2), K//2+1)]))
+            #apply the rule on cell j
+            tapes[(i+1)%N, j] = rule[idx]
+    return tapes
